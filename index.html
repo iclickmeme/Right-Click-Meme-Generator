@@ -269,8 +269,16 @@
 
   // universal stack + slots
   const PRESET = {
-    slots:{ userImage:{x:290,y:225,boxW:260,boxH:260}, textBelow:{x:290,y:420,size:48,stroke:4}, textMenu:{x:1000,y:120,size:42,stroke:3} }
-  };
+  slots:{
+    userImage:{x:290,y:225,boxW:260,boxH:260},
+
+    // Text under picture → now spawns at (425,365), 13pt ≈ 17px
+    textBelow:{x:425,y:365,size:17,stroke:2},
+
+    // Menu text → now spawns at (769,200), 12pt ≈ 16px
+    textMenu:{x:769,y:200,size:16,stroke:2}
+  }
+};
 
   async function autoLoad(){
     warn.classList.remove('show'); warn.textContent = '';
