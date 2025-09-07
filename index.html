@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Frosty's Right-Click Meme Generator</title>
+  <style>
+    /* ========= Win95 Theme Variables ========= */
+    :root{
+      --win95-face:#c0c0c0;
+      --win95-light:#ffffff;
+      --win95-mid:#dfdfdf;
+      --win95-shadow:#808080;
+      --win95-dark:#000000;
+      --win95-blue:#000080;
+      --win95-blue-light:#1084d0;
+      --text:#000;
+      --link:#0000ee;
+    }
+
+    /* Desktop background */
+    body{
+      margin:0;
+      background:#008080; /* Win95 teal desktop */
+      color:var(--text);
+      font:14px/1.3 "WindowsRegular", Tahoma, "MS Sans Serif", Arial, sans-serif;
+    }
+
+    /* Optional: embed the WindowsRegular font you supplied */
+    @font-face{font-family:'WindowsRegular';src:url('Windows Regular.ttf') format('truetype');font-display:swap}
+
+    /* Window frame */
+    .win95-window{
+      width: min(1200px, 95vw);
+      margin: 16px auto;
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      background: var(--win95-face);
+      box-shadow:
+        inset -1px -1px 0 0 var(--win95-dark),
+        inset 1px 1px 0 0 var(--win95-light),
+        inset -2px -2px 0 0 var(--win95-shadow),
+        inset 2px 2px 0 0 var(--win95-mid);
+    }
+
+    /* Title bar */
+    .win95-titlebar{
+      height: 28px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 0 6px;
+      background: linear-gradient(180deg, var(--win95-blue-light), var(--win95-blue));
+      color:#fff;
+      font-weight:bold;
+      user-select:none;
+    }
+    .win95-titlebar .title{
+      display:flex; gap:8px; align-items:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .win95-titlebar .controls{ display:flex; gap:4px; }
+    .win95-button-title{
+      width: 18px; height:18px;
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      background: var(--win95-face);
+      display:grid; place-items:center;
+      font-size:12px; color:#000; line-height:1;
+    }
+
+    /* Menu/status bar */
+    .win95-menubar{
+      display:flex; gap:12px; padding: 6px; border-top:1px solid var(--win95-light);
+      border-left:1px solid var(--win95-light);
+      border-right:1px solid var(--win95-dark); border-bottom:1px solid var(--win95-dark);
+      background: var(--win95-face);
+      font-size:12px;
+    }
+
+    /* Main app layout: sidebar + canvas */
+    .wrap{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 70vh;
+    }
+
+    /* Sidebar panels -> Win95 group box */
+    aside{
+      padding:10px;
+      border-right: 2px solid var(--win95-dark);
+      border-left: 2px solid var(--win95-light);
+      background: var(--win95-face);
+    }
+    .group{
+      margin: 0 0 10px 0;
+      padding: 10px;
+      background: var(--win95-face);
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      box-shadow:
+        inset -1px -1px 0 0 var(--win95-dark),
+        inset 1px 1px 0 0 var(--win95-light);
+    }
+    .group h3{
+      margin: -4px 0 8px 0;
+      padding: 0 4px;
+      font-size: 12px;
+      font-weight: normal;
+      background: var(--win95-face);
+      display:inline-block;
+    }
+    label{ display:block; font-size:12px; margin:6px 0 2px; }
+    .row{ display:flex; gap:8px; }
+    .row>*{ flex:1; }
+
+    /* Inputs & selects -> Win95 style */
+    input[type="text"], input[type="number"], input[type="color"], select{
+      width:100%;
+      padding: 4px 6px;
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      background: #fff;
+      color:#000;
+      font: 13px "WindowsRegular", "MS Sans Serif", Tahoma, Arial, sans-serif;
+      outline:none;
+    }
+
+    /* Buttons -> Win95 */
+    button{
+      appearance:none;
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      background: var(--win95-face);
+      color:#000;
+      padding: 4px 10px;
+      font: 13px "WindowsRegular", "MS Sans Serif", Tahoma, Arial, sans-serif;
+      cursor: default;
+    }
+    button:active{
+      border: 2px solid var(--win95-dark);
+      border-left-color: var(--win95-light);
+      border-top-color: var(--win95-light);
+    }
+    .primary{
+      font-weight:bold;
+    }
+
+    /* Canvas holder */
+    main{
+      display:grid; place-items:center; padding:10px;
+      background: var(--win95-face);
+    }
+    canvas{
+      background:#000;
+      border: 2px solid var(--win95-dark);
+      border-right-color: var(--win95-light);
+      border-bottom-color: var(--win95-light);
+      image-rendering: pixelated;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Links */
+    a{ color: var(--link); text-decoration: underline; }
+
+    /* Footer-ish status bar */
+    .statusbar{
+      padding: 4px 6px;
+      border-top: 2px solid var(--win95-light);
+      border-left: 2px solid var(--win95-light);
+      border-right: 2px solid var(--win95-dark);
+      border-bottom: 2px solid var(--win95-dark);
+      background: var(--win95-face);
+      font-size:12px;
+      display:flex; justify-content:space-between; gap:12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="win95-window">
+    <div class="win95-titlebar">
+      <div class="title">
+        <!-- Tiny placeholder icon (▣) to mimic exe icon -->
+        <span style="filter: drop-shadow(1px 1px 0 #000);">▣</span>
+        <span>Frosty's Right-Click Meme Generator</span>
+      </div>
+      <div class="controls">
+        <div class="win95-button-title">–</div>
+        <div class="win95-button-title">▢</div>
+        <div class="win95-button-title">×</div>
+      </div>
+    </div>
+
+    <div class="win95-menubar">
+      <div><u>F</u>ile</div>
+      <div><u>E</u>dit</div>
+      <div><u>V</u>iew</div>
+      <div><u>H</u>elp</div>
+      <div style="margin-left:auto;">
+        <button id="btn-save" class="primary">Save Meme</button>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <aside>
+        <div class="group">
+          <h3>Canvas</h3>
+          <div class="row">
+            <div><label>Width (px)</label><input type="number" id="w" value="1500" min="64"></div>
+            <div><label>Height (px)</label><input type="number" id="h" value="500" min="64"></div>
+          </div>
+          <div class="row">
+            <div><label>Background</label><input type="color" id="bg" value="#cfc6a7"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Quick Fill</h3>
+          <div class="row">
+            <button id="btnUploadUserPic">Upload Picture</button>
+            <button id="btnReplacePic">Replace Picture</button>
+          </div>
+          <div class="row" style="margin-top:6px;">
+            <button id="btnDeletePic">✕ Delete Picture</button>
+          </div>
+          <label>Text under picture</label><input type="text" id="txtBelow" placeholder="type text 1">
+          <label>Text in highlighted field</label><input type="text" id="txtMenu" placeholder="type text 2">
+          <div style="font-size:12px; margin-top:6px">Tip: Click an item on the canvas to select. Drag to move. Use corner squares to resize.</div>
+        </div>
+
+        <div class="group">
+          <h3>Connect</h3>
+          <p style="font-size:13px; margin:0;">
+            Follow me on
+            <a href="https://x.com/iclickmeme" target="_blank">X @iclickmeme</a>
+          </p>
+        </div>
+      </aside>
+
+      <main>
+        <canvas id="cv" width="1500" height="500"></canvas>
+      </main>
+    </div>
+
+    <div class="statusbar">
+      <div>Ready</div>
+      <div>© Frosty</div>
+    </div>
+  </div>
+
+  <script>
+  /* ========= JS kept identical to your working version ========= */
+  const $ = (s)=>document.querySelector(s);
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const state = { w:1500, h:500, bg:'#cfc6a7', layers:[], selected:null, hitMode:null };
+  const HANDLE = 10;
+
+  const uid = ()=>Math.random().toString(36).slice(2,9);
+
+  function textMetrics(layer){
+    const t = layer.data; ctx.save(); ctx.font = `${t.size}px ${t.font}`;
+    const w = ctx.measureText(t.text||' ').width; ctx.restore();
+    const h = t.size * 1.2; return {w,h};
+  }
+
+  function getBounds(layer){
+    if(layer.type==='image' && layer.data.img){
+      const w = layer.data.img.naturalWidth * layer.scale;
+      const h = layer.data.img.naturalHeight * layer.scale;
+      return {x:layer.x - w/2, y:layer.y - h/2, w, h};
+    }
+    if(layer.type==='text'){
+      const m = textMetrics(layer); const w=m.w*layer.scale, h=m.h*layer.scale;
+      let x0=layer.x; if(layer.data.align==='center') x0-=w/2; if(layer.data.align==='right') x0-=w;
+      const y0=layer.y-h/2; return {x:x0,y:y0,w,h};
+    }
+    return {x:layer.x-20,y:layer.y-20,w:40,h:40};
+  }
+
+  function drawHandles(b){
+    ctx.save(); ctx.strokeStyle:'#00ffff'; ctx.lineWidth=1; ctx.setLineDash([6,3]);
+    ctx.strokeRect(b.x,b.y,b.w,b.h); ctx.setLineDash([]); ctx.fillStyle:'#00ffff';
+    ctx.fillRect(b.x-HANDLE/2,b.y-HANDLE/2,HANDLE,HANDLE);
+    ctx.fillRect(b.x+b.w-HANDLE/2,b.y-HANDLE/2,HANDLE,HANDLE);
+    ctx.fillRect(b.x-HANDLE/2,b.y+b.h-HANDLE/2,HANDLE,HANDLE);
+    ctx.fillRect(b.x+b.w-HANDLE/2,b.y+b.h-HANDLE/2,HANDLE,HANDLE);
+    ctx.restore();
+  }
+
+  function draw(){
+    if (cv.width!==state.w||cv.height!==state.h){cv.width=state.w;cv.height=state.h;}
+    if (state.transparent){ ctx.clearRect(0,0,cv.width,cv.height); }
+    else { ctx.fillStyle=state.bg; ctx.fillRect(0,0,cv.width,cv.height); }
+
+    state.layers.forEach(l=>{ ctx.save(); ctx.globalAlpha=l.opacity; ctx.translate(l.x,l.y); ctx.rotate(l.rot*Math.PI/180); ctx.scale(l.scale,l.scale);
+      if(l.type==='image' && l.data.img){ const im=l.data.img; ctx.drawImage(im, -im.naturalWidth/2, -im.naturalHeight/2); }
+      if(l.type==='text'){ const t=l.data; ctx.textAlign=t.align; ctx.textBaseline='middle'; ctx.font=`${t.size}px ${t.font}`;
+        if(t.strokeWidth>0){ctx.lineWidth=t.strokeWidth; ctx.strokeStyle=t.strokeColor; ctx.strokeText(t.text,0,0);} ctx.fillStyle=t.color; ctx.fillText(t.text,0,0); }
+      ctx.restore(); });
+    if(state.selected){ const b=getBounds(state.selected); drawHandles(b); }
+  }
+
+  const PRESET = {
+    files:['Menu.png','ImageSelectLines.png','launchIcon.png','MouseCursor.png','ScreenTexture.png'],
+    slots:{ userImage:{x:290,y:225,boxW:260,boxH:260}, textBelow:{x:290,y:420,size:48,stroke:4}, textMenu:{x:1000,y:120,size:42,stroke:3} }
+  };
+  function loadImg(name){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=name; }); }
+  function pushUniversal(img,name){ state.layers.push({id:name+'-'+uid(),type:'image',x:img.naturalWidth/2,y:img.naturalHeight/2,scale:1,rot:0,opacity:1,data:{src:name,img}, locked:true}); }
+
+  async function autoLoad(){
+    state.layers=[];
+    try{ const menu = await loadImg('Menu.png'); pushUniversal(menu,'Menu.png'); }catch{}
+    state.layers.push({id:'slot-user-image',type:'image',x:PRESET.slots.userImage.x,y:PRESET.slots.userImage.y,scale:1,rot:0,opacity:1,data:{src:'(user image)',img:null}, locked:false});
+    state.layers.push({id:'slot-text-below',type:'text',x:PRESET.slots.textBelow.x,y:PRESET.slots.textBelow.y,scale:1,rot:0,opacity:1,
+      data:{text:'',font:'WindowsRegular, Arial, Helvetica, sans-serif',size:PRESET.slots.textBelow.size,color:'#ffffff',strokeColor:'#000000',strokeWidth:PRESET.slots.textBelow.stroke,align:'center'}, locked:false});
+    state.layers.push({id:'slot-text-menu',type:'text',x:PRESET.slots.textMenu.x,y:PRESET.slots.textMenu.y,scale:1,rot:0,opacity:1,
+      data:{text:'',font:'WindowsRegular, Arial, Helvetica, sans-serif',size:PRESET.slots.textMenu.size,color:'#e8e8e8',strokeColor:'#000000',strokeWidth:PRESET.slots.textMenu.stroke,align:'left'}, locked:false});
+    for (const name of ['ImageSelectLines.png','launchIcon.png','MouseCursor.png','ScreenTexture.png']){ try{ const im=await loadImg(name); pushUniversal(im,name);}catch{} }
+    draw();
+  }
+
+  // Basic UI
+  $('#w').oninput = e=>{ state.w=+e.target.value; draw(); };
+  $('#h').oninput = e=>{ state.h=+e.target.value; draw(); };
+  $('#bg').oninput = e=>{ state.bg=e.target.value; draw(); };
+
+  function openPicDialog(callback){
+    const input = document.createElement('input'); input.type='file'; input.accept='image/*';
+    input.onchange = ev=>{ const f=ev.target.files?.[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{ const img=new Image(); img.onload=()=>callback(img); img.src=r.result; }; r.readAsDataURL(f); };
+    input.click();
+  }
+
+  // Upload, Replace, Delete
+  $('#btnUploadUserPic').onclick = ()=>{
+    openPicDialog((img)=>{
+      const box=PRESET.slots.userImage;
+      const scale=Math.min(box.boxW/img.naturalWidth, box.boxH/img.naturalHeight);
+      const slot = state.layers.find(l=>l.id==='slot-user-image'); if(slot){ slot.data.img=img; slot.scale=scale; slot.x=box.x; slot.y=box.y; draw(); }
+    });
+  };
+  $('#btnReplacePic').onclick = ()=>{
+    const slot = state.layers.find(l=>l.id==='slot-user-image');
+    if(!slot || !slot.data.img){ return $('#btnUploadUserPic').click(); }
+    openPicDialog((img)=>{ const scale=slot.scale||(Math.min(PRESET.slots.userImage.boxW/img.naturalWidth, PRESET.slots.userImage.boxH/img.naturalHeight)); slot.data.img=img; slot.scale=scale; draw(); });
+  };
+  $('#btnDeletePic').onclick = ()=>{
+    const slot = state.layers.find(l=>l.id==='slot-user-image'); if(slot){ slot.data.img=null; draw(); }
+  };
+
+  // Live text
+  document.getElementById('txtBelow').oninput = e=>{ const l=state.layers.find(l=>l.id==='slot-text-below'); if(l){ l.data.text=e.target.value; draw(); }};
+  document.getElementById('txtMenu').oninput  = e=>{ const l=state.layers.find(l=>l.id==='slot-text-menu');  if(l){ l.data.text=e.target.value; draw(); }};
+
+  // Selection / Drag / Resize
+  function pick(x,y){
+    for(let i=state.layers.length-1;i>=0;i--){
+      const l=state.layers[i];
+      if(l.locked) continue;
+      const b=getBounds(l);
+      if(x>=b.x && x<=b.x+b.w && y>=b.y && y<=b.y+b.h){
+        const corners=[{x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x,y:b.y+b.h},{x:b.x+b.w,y:b.y+b.h}];
+        for(const h of corners){
+          if(Math.abs(x-h.x)<=HANDLE && Math.abs(y-h.y)<=HANDLE){ return {layer:l, mode:'resize', bounds:b}; }
+        }
+        return {layer:l, mode:'drag', bounds:b};
+      }
+    }
+    return null;
+  }
+  function toCanvasCoords(evt){
+    const r=cv.getBoundingClientRect();
+    return { x:(evt.clientX-r.left)*(cv.width/r.width), y:(evt.clientY-r.top)*(cv.height/r.height) };
+  }
+  let dragging=false, start={x:0,y:0}, startLayer=null, mode=null;
+  cv.addEventListener('mousedown', (e)=>{
+    const p=toCanvasCoords(e);
+    const hit=pick(p.x,p.y);
+    if(hit){ state.selected=hit.layer; mode=hit.mode; dragging=true; start=p; startLayer={x:hit.layer.x,y:hit.layer.y,scale:hit.layer.scale,size:hit.layer.data.size||0, bounds:hit.bounds}; draw(); }
+    else { state.selected=null; draw(); }
+  });
+  cv.addEventListener('mousemove',(e)=>{
+    if(!dragging||!state.selected) return;
+    const p=toCanvasCoords(e);
+    const dx=p.x-start.x, dy=p.y-start.y;
+    const l=state.selected;
+    if(mode==='drag'){ l.x=startLayer.x+dx; l.y=startLayer.y+dy; }
+    if(mode==='resize'){
+      const b=startLayer.bounds; const cx=b.x+b.w/2, cy=b.y+b.h/2;
+      const dist0=Math.hypot(start.x-cx,start.y-cy); const dist1=Math.hypot(p.x-cx,p.y-cy);
+      const factor = dist1/Math.max(dist0,1);
+      if(l.type==='image'){ l.scale = Math.max(0.1, startLayer.scale*factor); }
+      if(l.type==='text'){ l.data.size = Math.max(6, Math.round(startLayer.size*factor)); }
+    }
+    draw();
+  });
+  window.addEventListener('mouseup', ()=>{ dragging=false; });
+
+  // Save
+  function saveCanvas(){
+    try{
+      if (cv.toBlob){
+        cv.toBlob(function(blob){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='meme.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }, 'image/png'); 
+      } else {
+        const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download='meme.png'; a.click();
+      }
+    }catch(e){
+      alert('Save failed. If you used images from a different domain, the browser may block saving. Keep assets in the same folder as index.html, or upload pictures from your device.');
+    }
+  }
+  $('#btn-save').onclick = saveCanvas;
+
+  window.addEventListener('load', autoLoad);
+  </script>
+</body>
+</html>
