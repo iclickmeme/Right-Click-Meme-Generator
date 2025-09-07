@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Frosty's Right-Click Meme Generator</title>
   <style>
+    /* NOTE: keep this file next to index.html named EXACTLY: Windows Regular.ttf */
     @font-face{font-family:'WindowsRegular';src:url('Windows Regular.ttf') format('truetype');font-display:swap}
 
     :root{
       --win95-face:#c0c0c0; --win95-light:#ffffff; --win95-mid:#dfdfdf; --win95-shadow:#808080; --win95-dark:#000000;
       --win95-blue:#000080; --win95-blue-light:#1084d0; --text:#000; --link:#0000ee;
+      --warn:#b00020;
     }
     *{box-sizing:border-box}
     body{margin:0;background:#008080;color:var(--text);font:14px/1.3 'WindowsRegular','MS Sans Serif',Tahoma,Arial,sans-serif;}
@@ -46,7 +48,7 @@
     label{display:block; font-size:12px; margin:6px 0 2px;}
     .row{display:flex; gap:8px;} .row>*{flex:1;}
 
-    input[type="text"],input[type="number"],input[type="color"],select{
+    input[type="text"],input[type="number"],input[type="color"],select,input[type="range"]{
       width:100%; padding:4px 6px; background:#fff; color:#000;
       border:2px solid var(--win95-dark); border-right-color:var(--win95-light); border-bottom-color:var(--win95-light);
       font:13px 'WindowsRegular','MS Sans Serif',Tahoma,Arial,sans-serif; outline:none;
@@ -72,6 +74,8 @@
       border-right:2px solid var(--win95-dark); border-bottom:2px solid var(--win95-dark);
     }
     #status{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60ch;}
+    #warn{display:none;color:#fff;background:var(--warn);padding:6px 10px;font-size:12px}
+    #warn.show{display:block;}
   </style>
 </head>
 <body>
@@ -80,6 +84,8 @@
       <div class="title"><span style="filter:drop-shadow(1px 1px 0 #000);">▣</span><span>Frosty's Right-Click Meme Generator</span></div>
       <div class="controls"><div class="win95-button-title">–</div><div class="win95-button-title">▢</div><div class="win95-button-title">×</div></div>
     </div>
+
+    <div id="warn"></div>
 
     <div class="win95-menubar">
       <div><u>F</u>ile</div><div><u>E</u>dit</div><div><u>V</u>iew</div><div><u>H</u>elp</div>
@@ -113,6 +119,27 @@
           <div style="font-size:12px;margin-top:6px">Tip: Click an item on the canvas to select. Drag to move. Use corner squares to resize.</div>
         </div>
 
+        <!-- Background Options (compact, above Connect) -->
+        <div class="group">
+          <h3>Background Options</h3>
+          <label>Preset (optional)</label>
+          <select id="bgSelect">
+            <option value="">Use color only</option>
+            <option value="WindowsBG.png">WindowsBG.png</option>
+            <option value="TrailerTrashBG.png">TrailerTrashBG.png</option>
+            <option value="Retro1BG.png">Retro1BG.png</option>
+            <option value="Retro2BG.png">Retro2BG.png</option>
+            <option value="FireBG.png">FireBG.png</option>
+            <option value="__upload__">Upload custom…</option>
+          </select>
+          <input type="file" id="bgUpload" accept="image/*" style="display:none">
+          <p style="margin:6px 0 0; font-size:12px; opacity:.85;">
+            Tip: backgrounds are optimized for <strong>1500 × 500</strong> px.
+          </p>
+          <label style="margin-top:6px;">Preset opacity: <span id="bgOpacityValue">100%</span></label>
+          <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1">
+        </div>
+
         <div class="group">
           <h3>Connect</h3>
           <p style="font-size:13px;margin:0;">Follow me on <a href="https://x.com/iclickmeme" target="_blank">X @iclickmeme</a></p>
@@ -128,9 +155,38 @@
   <script>
   const $ = (s)=>document.querySelector(s);
   const cv = $('#cv'), ctx = cv.getContext('2d');
-  const state = { w:1500, h:500, bg:'#cfc6a7', layers:[], selected:null, hitMode:null, transparent:false };
+  const warn = $('#warn');
+
+  // State (includes bg preset alpha)
+  const state = { w:1500, h:500, bg:'#cfc6a7', bgPreset:{src:null,img:null,alpha:1}, layers:[], selected:null };
   const HANDLE = 10;
   const uid = ()=>Math.random().toString(36).slice(2,9);
+
+  // ===== Forgiving filename resolver for universal assets =====
+  const CANDIDATES = (base)=>[
+    `${base}.png`, `${base}.PNG`, `${base}.jpg`, `${base}.jpeg`,
+    `assets/${base}.png`, `assets/${base}.PNG`, `assets/${base}.jpg`, `assets/${base}.jpeg`,
+    `${base.toLowerCase()}.png`, `${base.toLowerCase()}.PNG`, `${base.toLowerCase()}.jpg`,
+    `assets/${base.toLowerCase()}.png`, `assets/${base.toLowerCase()}.PNG`, `assets/${base.toLowerCase()}.jpg`
+  ];
+
+  // For your five locked layers
+  const UNIVERSALS = {
+    Menu: CANDIDATES('Menu'),
+    ImageSelectLines: CANDIDATES('ImageSelectLines'),
+    launchIcon: CANDIDATES('launchIcon'),
+    MouseCursor: CANDIDATES('MouseCursor'),
+    ScreenTexture: CANDIDATES('ScreenTexture')
+  };
+
+  // Try to load the first variant that exists
+  async function loadFirst(names){
+    for(const src of names){
+      const im = await loadImg(src, /*quiet*/true);
+      if(im) return {img:im, src};
+    }
+    return null;
+  }
 
   function textMetrics(layer){ const t = layer.data; ctx.save(); ctx.font = `${t.size}px ${t.font}`; const w = ctx.measureText(t.text||' ').width; ctx.restore(); const h = t.size*1.2; return {w,h}; }
   function getBounds(layer){
@@ -155,9 +211,26 @@
     ctx.fillRect(b.x+b.w-HANDLE/2,b.y+b.h-HANDLE/2,HANDLE,HANDLE);
     ctx.restore();
   }
+
+  // draw: color -> preset (with opacity) -> layers
   function draw(){
     if (cv.width!==state.w||cv.height!==state.h){cv.width=state.w;cv.height=state.h;}
-    if (state.transparent){ ctx.clearRect(0,0,cv.width,cv.height); } else { ctx.fillStyle=state.bg; ctx.fillRect(0,0,cv.width,cv.height); }
+    // color first
+    ctx.fillStyle=state.bg; ctx.fillRect(0,0,cv.width,cv.height);
+
+    // preset on top (cover) with opacity
+    if (state.bgPreset && state.bgPreset.img){
+      const im = state.bgPreset.img;
+      const scale = Math.max(cv.width/im.naturalWidth, cv.height/im.naturalHeight);
+      const w = im.naturalWidth*scale, h = im.naturalHeight*scale;
+      const x = (cv.width - w)/2, y = (cv.height - h)/2;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, state.bgPreset.alpha ?? 1));
+      ctx.drawImage(im, x, y, w, h);
+      ctx.restore();
+    }
+
+    // meme layers
     state.layers.forEach(l=>{
       ctx.save(); ctx.globalAlpha=l.opacity; ctx.translate(l.x,l.y); ctx.rotate(l.rot*Math.PI/180); ctx.scale(l.scale,l.scale);
       if(l.type==='image' && l.data.img){ const im=l.data.img; ctx.drawImage(im, -im.naturalWidth/2, -im.naturalHeight/2); }
@@ -168,13 +241,13 @@
     if(state.selected){ const b=getBounds(state.selected); drawHandles(b); }
   }
 
-  // Image loader that logs failures but still draws others
-  function loadImg(name){
+  // base loader (optionally quiet)
+  function loadImg(name, quiet=false){
     return new Promise((res)=>{
       const im=new Image();
       im.onload=()=>res(im);
-      im.onerror=()=>{ document.getElementById('status').textContent = 'Could not load '+name+' (check filename)'; res(null); };
-      im.src=name; // looks for file next to index.html
+      im.onerror=()=>{ if(!quiet){ document.getElementById('status').textContent = 'Could not load '+name+' (check filename)'; } res(null); };
+      im.src=name;
     });
   }
   function pushUniversal(img,name){
@@ -182,23 +255,47 @@
     state.layers.push({id:name+'-'+uid(),type:'image',x:img.naturalWidth/2,y:img.naturalHeight/2,scale:1,rot:0,opacity:1,data:{src:name,img}, locked:true});
   }
 
+  // universal stack + slots
   const PRESET = {
-    files:['Menu.png','ImageSelectLines.png','launchIcon.png','MouseCursor.png','ScreenTexture.png'],
     slots:{ userImage:{x:290,y:225,boxW:260,boxH:260}, textBelow:{x:290,y:420,size:48,stroke:4}, textMenu:{x:1000,y:120,size:42,stroke:3} }
   };
 
   async function autoLoad(){
+    warn.classList.remove('show'); warn.textContent = '';
     state.layers=[];
-    const menu = await loadImg('Menu.png'); pushUniversal(menu,'Menu.png');
+
+    // Try all filename variants for each universal asset
+    const missing = [];
+
+    const menuTry = await loadFirst(UNIVERSALS.Menu);
+    if(menuTry){ pushUniversal(menuTry.img,'Menu'); } else { missing.push('Menu.png'); }
+
+    // User image slot (editable)
     state.layers.push({id:'slot-user-image',type:'image',x:PRESET.slots.userImage.x,y:PRESET.slots.userImage.y,scale:1,rot:0,opacity:1,data:{src:'(user image)',img:null}, locked:false});
+
+    // Text layers (editable)
     state.layers.push({id:'slot-text-below',type:'text',x:PRESET.slots.textBelow.x,y:PRESET.slots.textBelow.y,scale:1,rot:0,opacity:1,
       data:{text:'',font:'WindowsRegular, Arial, Helvetica, sans-serif',size:PRESET.slots.textBelow.size,color:'#ffffff',strokeColor:'#000000',strokeWidth:PRESET.slots.textBelow.stroke,align:'center'}, locked:false});
     state.layers.push({id:'slot-text-menu',type:'text',x:PRESET.slots.textMenu.x,y:PRESET.slots.textMenu.y,scale:1,rot:0,opacity:1,
       data:{text:'',font:'WindowsRegular, Arial, Helvetica, sans-serif',size:PRESET.slots.textMenu.size,color:'#e8e8e8',strokeColor:'#000000',strokeWidth:PRESET.slots.textMenu.stroke,align:'left'}, locked:false});
 
-    for (const name of ['ImageSelectLines.png','launchIcon.png','MouseCursor.png','ScreenTexture.png']){
-      const im = await loadImg(name); pushUniversal(im,name);
+    const cursorTry = await loadFirst(UNIVERSALS.MouseCursor);
+    if(cursorTry){ pushUniversal(cursorTry.img,'MouseCursor'); } else { missing.push('MouseCursor.png'); }
+
+    const linesTry = await loadFirst(UNIVERSALS.ImageSelectLines);
+    if(linesTry){ pushUniversal(linesTry.img,'ImageSelectLines'); } else { missing.push('ImageSelectLines.png'); }
+
+    const launchTry = await loadFirst(UNIVERSALS.launchIcon);
+    if(launchTry){ pushUniversal(launchTry.img,'launchIcon'); } else { missing.push('launchIcon.png'); }
+
+    const texTry = await loadFirst(UNIVERSALS.ScreenTexture);
+    if(texTry){ pushUniversal(texTry.img,'ScreenTexture'); } else { missing.push('ScreenTexture.png'); }
+
+    if(missing.length){
+      warn.textContent = 'Missing or misnamed asset(s): ' + missing.join(', ') + '. Try putting them next to index.html or in an "assets/" folder, and check case (.png/.PNG).';
+      warn.classList.add('show');
     }
+
     draw();
   }
 
@@ -236,6 +333,7 @@
   document.getElementById('txtBelow').oninput = e=>{ const l=state.layers.find(l=>l.id==='slot-text-below'); if(l){ l.data.text=e.target.value; draw(); }};
   document.getElementById('txtMenu').oninput  = e=>{ const l=state.layers.find(l=>l.id==='slot-text-menu');  if(l){ l.data.text=e.target.value; draw(); }};
 
+  // hit test + drag/resize for editable layers
   function pick(x,y){
     for(let i=state.layers.length-1;i>=0;i--){
       const l=state.layers[i];
@@ -295,6 +393,83 @@
     }
   }
   document.getElementById('btn-save').onclick = saveCanvas;
+
+  // === Background dropdown + opacity (TOP-PINNED CUSTOM OPTION) ===
+  const bgSelect = document.getElementById('bgSelect');
+  const bgOpacity = document.getElementById('bgOpacity');
+  const bgOpacityValue = document.getElementById('bgOpacityValue');
+  const bgUpload = document.getElementById('bgUpload');
+
+  function upsertCustomOption() {
+    let opt = bgSelect.querySelector('option[value="__custom__"]');
+    if (!opt) {
+      opt = document.createElement('option');
+      opt.value = '__custom__';
+      opt.textContent = 'Custom (uploaded)';
+      const insertBefore = bgSelect.options[1] || null; // right after "Use color only"
+      bgSelect.insertBefore(opt, insertBefore);
+    } else {
+      opt.textContent = 'Custom (uploaded)';
+      if (bgSelect.options[1] !== opt) {
+        bgSelect.removeChild(opt);
+        const insertBefore = bgSelect.options[1] || null;
+        bgSelect.insertBefore(opt, insertBefore);
+      }
+    }
+    bgSelect.value = '__custom__';
+  }
+
+  bgSelect.addEventListener('change', async (e)=>{
+    const src = e.target.value;
+
+    if (src === '') {
+      state.bgPreset = { src:null, img:null, alpha: parseFloat(bgOpacity.value) };
+      draw();
+      return;
+    }
+
+    if (src === '__upload__') {
+      bgUpload.click(); // trigger file picker
+      return;
+    }
+
+    if (src === '__custom__') {
+      state.bgPreset.alpha = parseFloat(bgOpacity.value);
+      draw();
+      return;
+    }
+
+    // Preset file from disk
+    const im = await loadImg(src);
+    state.bgPreset = { src, img: im, alpha: parseFloat(bgOpacity.value) };
+    draw();
+  });
+
+  // Handle custom background upload
+  bgUpload.addEventListener('change', (ev)=>{
+    const file = ev.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        state.bgPreset = { src: '(custom)', img: im, alpha: parseFloat(bgOpacity.value) };
+        upsertCustomOption();  // pin & select the custom option at the top
+        draw();
+      };
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Opacity slider (affects presets & custom)
+  bgOpacity.addEventListener('input', ()=>{
+    const a = parseFloat(bgOpacity.value);
+    state.bgPreset.alpha = a;
+    bgOpacityValue.textContent = Math.round(a*100) + '%';
+    draw();
+  });
 
   window.addEventListener('load', autoLoad);
   </script>
