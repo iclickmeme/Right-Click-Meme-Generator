@@ -262,10 +262,20 @@
       im.src=name;
     });
   }
-  function pushUniversal(img,name){
-    if(!img) return;
-    state.layers.push({id:name+'-'+uid(),type:'image',x:img.naturalWidth/2,y:img.naturalHeight/2,scale:1,rot:0,opacity:1,data:{src:name,img}, locked:true});
-  }
+  function pushUniversal(img, name, locked = true, resizable = true){
+  if(!img) return;
+  state.layers.push({
+    id: name + '-' + uid(),
+    type: 'image',
+    x: img.naturalWidth/2,
+    y: img.naturalHeight/2,
+    scale: 1,
+    rot: 0,
+    opacity: 1,
+    data: { src: name, img, resizable },
+    locked
+  });
+}
 
   // universal stack + slots
   const PRESET = {
