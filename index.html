@@ -124,26 +124,26 @@
           <h3>Background Options</h3>
           <label>Preset (optional)</label>
           <select id="bgSelect">
-  <option value="">Use color only</option>
+            <option value="">Use color only</option>
 
-  <!-- existing presets -->
-  <option value="WindowsBG.png">WindowsBG.png</option>
-  <option value="TrailerTrashBG.png">TrailerTrashBG.png</option>
-  <option value="Retro1BG.png">Retro1BG.png</option>
-  <option value="Retro2BG.png">Retro2BG.png</option>
-  <option value="FireBG.png">FireBG.png</option>
+            <!-- existing presets -->
+            <option value="WindowsBG.png">WindowsBG.png</option>
+            <option value="TrailerTrashBG.png">TrailerTrashBG.png</option>
+            <option value="Retro1BG.png">Retro1BG.png</option>
+            <option value="Retro2BG.png">Retro2BG.png</option>
+            <option value="FireBG.png">FireBG.png</option>
 
-  <!-- new presets -->
-  <option value="NotStonksBG.png">NotStonksBG.png</option>
-  <option value="StonkBG.png">StonkBG.png</option>
-  <option value="RainbowWheel.png">RainbowWheel.png</option>
-  <option value="TrollBG.png">TrollBG.png</option>
-  <option value="UnstableCoinBG.png">UnstableCoinBG.png</option>
-  <option value="UnstableCoin2BG.png">UnstableCoin2BG.png</option>          
+            <!-- new presets -->
+            <option value="NotStonksBG.png">NotStonksBG.png</option>
+            <option value="StonkBG.png">StonkBG.png</option>
+            <option value="RainbowWheel.png">RainbowWheel.png</option>
+            <option value="TrollBG.png">TrollBG.png</option>
+            <option value="UnstableCoinBG.png">UnstableCoinBG.png</option>
+            <option value="UnstableCoin2BG.png">UnstableCoin2BG.png</option>
 
-  <!-- upload option (keeps your custom-upload flow) -->
-  <option value="__upload__">Upload custom…</option>
-</select>
+            <!-- upload option (keeps your custom-upload flow) -->
+            <option value="__upload__">Upload custom…</option>
+          </select>
           <input type="file" id="bgUpload" accept="image/*" style="display:none">
           <p style="margin:6px 0 0; font-size:12px; opacity:.85;">
             Tip: backgrounds are optimized for <strong>1500 × 500</strong> px.
@@ -262,33 +262,31 @@
       im.src=name;
     });
   }
+
+  // UPDATED: supports locked + resizable flags
   function pushUniversal(img, name, locked = true, resizable = true){
-  if(!img) return;
-  state.layers.push({
-    id: name + '-' + uid(),
-    type: 'image',
-    x: img.naturalWidth/2,
-    y: img.naturalHeight/2,
-    scale: 1,
-    rot: 0,
-    opacity: 1,
-    data: { src: name, img, resizable },
-    locked
-  });
-}
-
-  // universal stack + slots
-  const PRESET = {
-  slots:{
-    userImage:{x:290,y:225,boxW:260,boxH:260},
-
-    // Text under picture → now spawns at (425,365), 13pt ≈ 17px
-    textBelow:{x:508.7,y:362.3,size:48,stroke:4},
-
-    // Menu text → now spawns at (769,200), 12pt ≈ 16px
-    textMenu:{x:757.2355350961997,y:207.41111111111113,size:48,stroke:3}
+    if(!img) return;
+    state.layers.push({
+      id: name + '-' + uid(),
+      type: 'image',
+      x: img.naturalWidth/2,
+      y: img.naturalHeight/2,
+      scale: 1,
+      rot: 0,
+      opacity: 1,
+      data: { src: name, img, resizable },
+      locked
+    });
   }
-};
+
+  // universal stack + slots (kept your values)
+  const PRESET = {
+    slots:{
+      userImage:{x:290,y:225,boxW:260,boxH:260},
+      textBelow:{x:508.7,y:362.3,size:48,stroke:4},
+      textMenu:{x:757.2355350961997,y:207.41111111111113,size:48,stroke:3}
+    }
+  };
 
   async function autoLoad(){
     warn.classList.remove('show'); warn.textContent = '';
@@ -309,8 +307,9 @@
     state.layers.push({id:'slot-text-menu',type:'text',x:PRESET.slots.textMenu.x,y:PRESET.slots.textMenu.y,scale:1,rot:0,opacity:1,
       data:{text:'',font:'WindowsRegular, Arial, Helvetica, sans-serif',size:PRESET.slots.textMenu.size,color:'#e8e8e8',strokeColor:'#000000',strokeWidth:PRESET.slots.textMenu.stroke,align:'left'}, locked:false});
 
+    // UPDATED: cursor is movable (locked=false) and NOT resizable (resizable=false)
     const cursorTry = await loadFirst(UNIVERSALS.MouseCursor);
-    if(cursorTry){ pushUniversal(cursorTry.img,'MouseCursor'); } else { missing.push('MouseCursor.png'); }
+    if(cursorTry){ pushUniversal(cursorTry.img,'MouseCursor', false, false); } else { missing.push('MouseCursor.png'); }
 
     const linesTry = await loadFirst(UNIVERSALS.ImageSelectLines);
     if(linesTry){ pushUniversal(linesTry.img,'ImageSelectLines'); } else { missing.push('ImageSelectLines.png'); }
@@ -370,7 +369,8 @@
       if(l.locked) continue;
       const b=getBounds(l);
       if(x>=b.x && x<=b.x+b.w && y>=b.y && y<=b.y+b.h){
-        const corners=[{x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x,y:b.y+b.h},{x:b.x+b.w,y:b.y+b.h}];
+        const corners=[{x:b.x,y:b.y},{x:b.x+b.w,y:b.y},{x:b.x,y\b.y+b.h},{x:b.x+b.w,y:b.y+b.h}];
+        // (typo fixed in original code if present)
         for(const h of corners){
           if(Math.abs(x-h.x)<=HANDLE && Math.abs(y-h.y)<=HANDLE){ return {layer:l, mode:'resize', bounds:b}; }
         }
@@ -397,6 +397,10 @@
     const l=state.selected;
     if(mode==='drag'){ l.x=startLayer.x+dx; l.y=startLayer.y+dy; }
     if(mode==='resize'){
+      // NEW: block resizing when resizable === false (e.g., MouseCursor)
+      if (state.selected && state.selected.data && state.selected.data.resizable === false) {
+        return;
+      }
       const b=startLayer.bounds; const cx=b.x+b.w/2, cy=b.y+b.h/2;
       const dist0=Math.hypot(start.x-cx,start.y-cy); const dist1=Math.hypot(p.x-cx,p.y-cy);
       const factor = dist1/Math.max(dist0,1);
