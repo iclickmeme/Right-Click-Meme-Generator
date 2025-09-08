@@ -385,6 +385,29 @@
   }
   document.getElementById('btn-save').onclick=saveCanvas;
 
+// Copy the canvas as PNG to the clipboard
+async function copyCanvasToClipboard() {
+  const statusEl = document.getElementById('status');
+  try {
+    const blob = await new Promise(resolve => cv.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Could not create PNG blob');
+
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]);
+      if (statusEl) statusEl.textContent = 'Copied meme to 📋 — paste with Cmd/Ctrl+V!';
+    } else {
+      if (statusEl) statusEl.textContent = 'Clipboard not available. Use “Save Meme” instead.';
+      alert('Clipboard not supported here. Use “Save Meme” instead.');
+    }
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Copy failed. Try “Save Meme”.';
+    console.error('Copy failed:', err);
+  }
+}
+
+// Wire up the Copy button
+document.getElementById('btn-copy').addEventListener('click', copyCanvasToClipboard);
+
   const bgSelect=document.getElementById('bgSelect');
   const bgOpacity=document.getElementById('bgOpacity');
   const bgOpacityValue=document.getElementById('bgOpacityValue');
