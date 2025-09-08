@@ -298,8 +298,25 @@
   }
 
   // controls
-  $('#w').oninput=e=>{state.w=+e.target.value;draw();};
-  $('#h').oninput=e=>{state.h=+e.target.value;draw();};
+  function resizeCanvasCentered(newW, newH) {
+  const oldW = state.w;
+  const oldH = state.h;
+
+  state.w = newW;
+  state.h = newH;
+
+  // shift all layers so content stays centered
+  const dx = (newW - oldW) / 2;
+  const dy = (newH - oldH) / 2;
+  state.layers.forEach(l => {
+    l.x += dx;
+    l.y += dy;
+  });
+
+  draw();
+}
+  $('#w').oninput = e => resizeCanvasCentered(+e.target.value, state.h);
+  $('#h').oninput = e => resizeCanvasCentered(state.w, +e.target.value);
   $('#bg').oninput=e=>{state.bg=e.target.value;draw();};
 
   function openPicDialog(cb){
