@@ -20,6 +20,13 @@
                  inset -2px -2px 0 var(--win95-shadow), inset 2px 2px 0 var(--win95-mid);}
     .win95-titlebar{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;
       background:linear-gradient(180deg,var(--win95-blue-light),var(--win95-blue));color:#fff;font-weight:bold;user-select:none}
+    .controls {
+  display: flex;
+  flex-direction: row;       /* buttons side-by-side */
+  justify-content: flex-end; /* push to the far right */
+  align-items: center;       /* vertically aligned */
+  gap: 2px;                  /* spacing between buttons */
+}
     .win95-button-title{width:18px;height:18px;display:grid;place-items:center;background:var(--win95-face);color:#000;
       border:2px solid var(--win95-dark);border-right-color:var(--win95-light);border-bottom-color:var(--win95-light);font-size:12px;}
     .win95-menubar{display:flex;gap:12px;padding:6px;font-size:12px;background:var(--win95-face);
