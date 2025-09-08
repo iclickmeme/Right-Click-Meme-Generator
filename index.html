@@ -322,8 +322,6 @@
   $('#h').oninput = e => resizeCanvasCentered(state.w, +e.target.value);
   $('#bg').oninput=e=>{state.bg=e.target.value;draw();};
 
-  like
-
   document.getElementById('txtBelow').oninput=e=>{const l=state.layers.find(l=>l.id==='slot-text-below');if(l){l.data.text=e.target.value;draw();}};
   document.getElementById('txtMenu').oninput=e=>{const l=state.layers.find(l=>l.id==='slot-text-menu');if(l){l.data.text=e.target.value;draw();}};
 
