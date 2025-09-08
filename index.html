@@ -122,7 +122,29 @@
           <label style="margin-top:6px;">Preset opacity: <span id="bgOpacityValue">100%</span></label>
           <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1">
         </div>
+<!-- Icon Options -->
+<div class="group" id="iconGroup">
+  <h3>Icon Options</h3>
 
+  <label>Preset (optional)</label>
+  <select id="iconSelect">
+    <option value="">Keep current</option>
+
+    <!-- Add your preset icon files here (same folder or /assets) -->
+    <option value="ClippyIcon.png">Clippy.png</option>
+    <option value="TrencherIcon.png">Trencher.png</option>
+    <option value="fingerblasticon.png">FingerBlast.png</option>
+
+    <option value="__upload__">Upload custom…</option>
+    <option value="__clear__">Clear icon</option>
+  </select>
+  <input type="file" id="iconUpload" accept="image/*" style="display:none">
+
+  <p style="margin:6px 0 0; font-size:12px; opacity:.85;">
+    Tip: this replaces the same icon you upload with the <b>Upload/Replace</b> buttons.
+    Images are auto-fitted to the icon box (~<b>260×260</b>) and centered.
+  </p>
+</div>
         <div class="group">
           <h3>Connect</h3>
           <p style="font-size:13px;margin:0;">Follow me on <a href="https://x.com/iclickmeme" target="_blank">X @iclickmeme</a></p>
