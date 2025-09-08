@@ -417,7 +417,66 @@
   bgOpacity.addEventListener('input',()=>{
     const a=parseFloat(bgOpacity.value);state.bgPreset.alpha=a;bgOpacityValue.textContent=Math.round(a*100)+'%';draw();
   });
+// ===== Icon Options (targets the user's pfp layer: 'slot-user-image') =====
+const iconSelect = document.getElementById('iconSelect');
+const iconUpload = document.getElementById('iconUpload');
 
+function getUserIconLayer(){
+  return state.layers.find(l => l.id === 'slot-user-image');
+}
+
+// Fit an image into the predefined icon box and center it
+function setUserIconImage(img){
+  const layer = getUserIconLayer();
+  if (!layer) return;
+
+  const box = PRESET.slots.userImage; // {x,y,boxW,boxH}
+  const scale = Math.min(box.boxW / img.naturalWidth, box.boxH / img.naturalHeight);
+
+  layer.data.img = img;
+  layer.scale   = scale;
+  layer.x       = box.x;
+  layer.y       = box.y;
+
+  draw();
+}
+
+async function setUserIconFromSrc(src){
+  if (!src) return; // keep current
+  if (src === '__clear__'){
+    const layer = getUserIconLayer();
+    if (layer){ layer.data.img = null; draw(); }
+    return;
+  }
+  if (src === '__upload__'){
+    // Reuse your existing upload flow for consistency
+    iconUpload.click();
+    return;
+  }
+
+  // Load a preset image file by path
+  const im = await loadImg(src);
+  if (im) setUserIconImage(im);
+}
+
+// Handle preset change
+iconSelect.addEventListener('change', async (e)=>{
+  await setUserIconFromSrc(e.target.value);
+});
+
+// Handle custom upload from this dropdown
+iconUpload.addEventListener('change', (ev)=>{
+  const file = ev.target.files?.[0];
+  if (!file) return;
+
+  const r = new FileReader();
+  r.onload = ()=>{
+    const im = new Image();
+    im.onload = ()=> setUserIconImage(im);
+    im.src = r.result;
+  };
+  r.readAsDataURL(file);
+});
   window.addEventListener('load',autoLoad);
   </script>
 </body>
