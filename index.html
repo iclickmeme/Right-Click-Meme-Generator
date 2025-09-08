@@ -322,25 +322,7 @@
   $('#h').oninput = e => resizeCanvasCentered(state.w, +e.target.value);
   $('#bg').oninput=e=>{state.bg=e.target.value;draw();};
 
-  function openPicDialog(cb){
-    const input=document.createElement('input');input.type='file';input.accept='image/*';
-    input.onchange=ev=>{const f=ev.target.files?.[0];if(!f)return;const r=new FileReader();
-      r.onload=()=>{const img=new Image();img.onload=()=>cb(img);img.src=r.result;};r.readAsDataURL(f);};
-    input.click();
-  }
-  document.getElementById('btnUploadUserPic').onclick=()=>{
-    openPicDialog((img)=>{
-      const box=PRESET.slots.userImage;
-      const scale=Math.min(box.boxW/img.naturalWidth,box.boxH/img.naturalHeight);
-      const slot=state.layers.find(l=>l.id==='slot-user-image');if(slot){slot.data.img=img;slot.scale=scale;slot.x=box.x;slot.y=box.y;draw();}
-    });
-  };
-  document.getElementById('btnReplacePic').onclick=()=>{
-    const slot=state.layers.find(l=>l.id==='slot-user-image');
-    if(!slot||!slot.data.img){return document.getElementById('btnUploadUserPic').click();}
-    openPicDialog((img)=>{const box=PRESET.slots.userImage;const scale=slot.scale||(Math.min(box.boxW/img.naturalWidth,box.boxH/img.naturalHeight));slot.data.img=img;slot.scale=scale;draw();});
-  };
-  document.getElementById('btnDeletePic').onclick=()=>{const slot=state.layers.find(l=>l.id==='slot-user-image');if(slot){slot.data.img=null;draw();}};
+  like
 
   document.getElementById('txtBelow').oninput=e=>{const l=state.layers.find(l=>l.id==='slot-text-below');if(l){l.data.text=e.target.value;draw();}};
   document.getElementById('txtMenu').oninput=e=>{const l=state.layers.find(l=>l.id==='slot-text-menu');if(l){l.data.text=e.target.value;draw();}};
